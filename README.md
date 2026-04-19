@@ -60,7 +60,15 @@ If the service was created **before** `render.yaml` existed, the dashboard does 
 
 **Health check path:** `/api/health` (optional in Settings).
 
-**Environment variables** (optional): `GEMINI_API_KEY`, `CORS_ORIGINS` (comma-separated origins allowed to call the API, e.g. your static site URL).
+**Environment variables** (optional):
+
+| Variable | Purpose |
+|----------|---------|
+| `GEMINI_API_KEY` | Google Gemini assistant (optional) |
+| `CORS_ORIGINS` | Comma-separated browser origins allowed to call the API (e.g. `https://your-app.pages.dev,http://localhost:5173`). If unset or empty, the API allows **`*`** so the hosted UI can talk to Render without misconfiguration. Tighten this in production. |
+| `VITE_API_URL` | **Frontend build only**: set to your Render API base URL (e.g. `https://digital-asset-protection.onrender.com`) when you `npm run build`, so the UI does not call the wrong host. |
+
+If the UI shows errors after deploy, confirm **CORS** includes your frontend origin and the frontend was built with **`VITE_API_URL`** pointing at the API.
 
 ## Features (checklist)
 

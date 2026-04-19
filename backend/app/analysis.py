@@ -7,9 +7,15 @@ import io
 import random
 from typing import Literal, Optional, Tuple
 
-import cv2
 import numpy as np
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw, ImageFilter, ImageFont
+
+
+def _cv2():
+    """Lazy import so API can boot if OpenCV fails on minimal Linux images."""
+    import cv2
+
+    return cv2
 
 
 def file_hash(data: bytes) -> str:
@@ -78,6 +84,7 @@ def first_frame_from_video(data: bytes) -> Image.Image:
         f.write(data)
         path = f.name
     try:
+        cv2 = _cv2()
         cap = cv2.VideoCapture(path)
         ok, frame = cap.read()
         cap.release()
@@ -120,9 +127,16 @@ def apply_fake_edit(image: Image.Image) -> Image.Image:
     """Demo-only: blur face region + color shift + subtle logo patch."""
     arr = np.array(image)
     h, w = arr.shape[:2]
-    face = arr[h // 5 : 2 * h // 5, w // 3 : 2 * w // 3]
-    face_blur = cv2.GaussianBlur(face, (25, 25), 0)
-    arr[h // 5 : 2 * h // 5, w // 3 : 2 * w // 3] = face_blur
+    y0, y1 = h // 5, 2 * h // 5
+    x0, x1 = w // 3, 2 * w // 3
+    face = arr[y0:y1, x0:x1]
+    try:
+        cv2 = _cv2()
+        face_blur = cv2.GaussianBlur(face, (25, 25), 0)
+    except Exception:
+        crop = Image.fromarray(face).filter(ImageFilter.GaussianBlur(radius=10))
+        face_blur = np.array(crop)
+    arr[y0:y1, x0:x1] = face_blur
     # channel swap for "deepfake" look
     arr = arr[:, :, [2, 1, 0]]
     pil = Image.fromarray(arr)

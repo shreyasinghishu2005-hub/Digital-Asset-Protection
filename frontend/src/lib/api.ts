@@ -1,4 +1,5 @@
-const base = "";
+/** Production: set VITE_API_URL=https://your-api.onrender.com (no trailing slash). Dev: leave unset to use Vite proxy. */
+const base = (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/$/, "") ?? "";
 
 export type AnalyzeResult = {
   filename: string;

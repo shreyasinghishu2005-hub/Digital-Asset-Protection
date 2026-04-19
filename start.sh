@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Render / PaaS start script — use this as Start Command:  bash start.sh
-set -euo pipefail
+set -eo pipefail
 cd "$(dirname "$0")"
+export PORT="${PORT:-8000}"
 exec gunicorn your_application.wsgi:application \
   -k uvicorn.workers.UvicornWorker \
   -w 1 \

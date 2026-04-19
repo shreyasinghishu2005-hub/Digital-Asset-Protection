@@ -2,18 +2,58 @@ from __future__ import annotations
 
 import base64
 import io
+import logging
+import traceback
 from typing import Literal, Optional
 
-from fastapi import FastAPI, File, Form, HTTPException, UploadFile
+from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
+from fastapi.exception_handlers import http_exception_handler
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import Response
+from fastapi.responses import JSONResponse, Response
 from pydantic import BaseModel, Field
 from starlette.concurrency import run_in_threadpool
 
 from . import analysis, config, gemini_assistant
 from .store import blockchain, piracy
 
+logger = logging.getLogger("sportshield")
+
+if not logging.getLogger().handlers:
+    logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
+
 app = FastAPI(title="SportShield Pro API", version="1.0.0")
+
+
+@app.exception_handler(Exception)
+async def unhandled_exception_handler(request: Request, exc: Exception):
+    """Avoid opaque 500 HTML for API clients; log full trace on the server."""
+    if isinstance(exc, HTTPException):
+        return await http_exception_handler(request, exc)
+    logger.error("Unhandled error on %s %s\n%s", request.method, request.url.path, traceback.format_exc())
+    return JSONResponse(
+        status_code=500,
+        content={
+            "detail": "internal_server_error",
+            "path": request.url.path,
+            "hint": "Check Render logs; common causes: OpenCV import, bad multipart upload, or missing PORT.",
+        },
+    )
+
+
+@app.get("/")
+def root():
+    """Browser-friendly root so visiting the API host does not look like a broken site."""
+    return {
+        "service": "SportShield Pro API",
+        "ok": True,
+        "docs": "/docs",
+        "health": "/api/health",
+    }
+
+
+@app.get("/health")
+def health_alias():
+    return {"status": "ok"}
 
 app.add_middleware(
     CORSMiddleware,

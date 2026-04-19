@@ -10,7 +10,11 @@ def cors_origins() -> list[str]:
         "CORS_ORIGINS",
         "http://127.0.0.1:5173,http://localhost:5173",
     )
-    return [o.strip() for o in raw.split(",") if o.strip()]
+    out = [o.strip() for o in raw.split(",") if o.strip()]
+    # Empty list can break CORS middleware / clients when env is set to "" on hosts like Render.
+    if not out:
+        return ["*"]
+    return out
 
 
 def max_upload_bytes() -> int:
