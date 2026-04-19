@@ -1,0 +1,2 @@
+# Shell scripts must use LF for Linux deploys (Render, etc.)
+*.sh text eol=lf

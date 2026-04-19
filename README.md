@@ -38,15 +38,25 @@ Open **http://127.0.0.1:5173** — API calls proxy to port **8000**.
 The repo includes a **root** [`requirements.txt`](requirements.txt) that pulls in [`backend/requirements.txt`](backend/requirements.txt), so `pip install -r requirements.txt` works from the repository root (Render’s default).
 
 - **`.python-version`** pins **Python 3.12** (avoids bleeding-edge defaults like 3.14 for binary wheels). See [Render: Python version](https://render.com/docs/python-version).
-- **[`render.yaml`](render.yaml)** defines the **Start Command** for FastAPI. Render’s Python default is `gunicorn your_application.wsgi`, which **will fail** for this project — do not use that.
+- **[`render.yaml`](render.yaml)** suggests **`bash start.sh`** (recommended).
+- Render’s **default** Python start command is `gunicorn your_application.wsgi` without installing `gunicorn` and without an ASGI worker — that **will fail**. The repo now includes:
+  - [`start.sh`](start.sh) — **gunicorn + `uvicorn.workers.UvicornWorker`** (correct for FastAPI)
+  - [`your_application/wsgi.py`](your_application/wsgi.py) — exposes `application` for that pattern
+  - **`gunicorn`** in [`backend/requirements.txt`](backend/requirements.txt)
 
-**Start command** (must be exactly this for a manual Web Service):
+**Start command** (set this in the Render dashboard — **Settings → Start Command** — then **Save** and **Manual Deploy**):
+
+```bash
+bash start.sh
+```
+
+Alternative (uvicorn only, no gunicorn):
 
 ```bash
 cd backend && uvicorn app.main:app --host 0.0.0.0 --port $PORT
 ```
 
-If you already created the service: **Dashboard → your Web Service → Settings → Start Command** → paste the line above → Save and redeploy.
+If the service was created **before** `render.yaml` existed, the dashboard does **not** auto-update from the file; you must paste **`bash start.sh`** (or the uvicorn line) manually once.
 
 **Health check path:** `/api/health` (optional in Settings).
 
