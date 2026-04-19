@@ -13,6 +13,8 @@ export function ToastAlerts({ kind, message }: Props) {
           initial={{ y: -80, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           exit={{ y: -80, opacity: 0 }}
+          role="status"
+          aria-live="polite"
           className="fixed top-6 left-1/2 -translate-x-1/2 z-[100] glass px-6 py-4 border-rose-500/40 shadow-glowRed flex items-center gap-3"
         >
           <AlertTriangle className="w-8 h-8 text-rose-400 shrink-0" />
@@ -27,6 +29,8 @@ export function ToastAlerts({ kind, message }: Props) {
           initial={{ y: -80, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           exit={{ y: -80, opacity: 0 }}
+          role="status"
+          aria-live="polite"
           className="fixed top-6 left-1/2 -translate-x-1/2 z-[100] glass px-6 py-4 border-emerald-500/40 shadow-glow flex items-center gap-3"
         >
           <CheckCircle2 className="w-8 h-8 text-emerald-400 shrink-0" />
@@ -41,6 +45,8 @@ export function ToastAlerts({ kind, message }: Props) {
           initial={{ y: -80, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           exit={{ y: -80, opacity: 0 }}
+          role="status"
+          aria-live="polite"
           className="fixed top-6 left-1/2 -translate-x-1/2 z-[100] glass px-6 py-4 border-amber-500/40 flex items-center gap-3 max-w-md"
         >
           <AlertTriangle className="w-8 h-8 text-amber-400 shrink-0" />
@@ -55,6 +61,8 @@ export function ToastAlerts({ kind, message }: Props) {
           initial={{ y: -80, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           exit={{ y: -80, opacity: 0 }}
+          role="status"
+          aria-live="polite"
           className="fixed top-6 left-1/2 -translate-x-1/2 z-[100] glass px-6 py-4 border-cyan-500/30 flex items-center gap-3 max-w-lg"
         >
           <CheckCircle2 className="w-7 h-7 text-cyan-400 shrink-0" />

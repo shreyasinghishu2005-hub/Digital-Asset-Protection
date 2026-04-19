@@ -14,3 +14,26 @@ body {
 .glass {
   @apply bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl;
 }
+
+/* Skip link: hidden until keyboard focus */
+.skip-to-main {
+  position: absolute;
+  left: -9999px;
+  top: auto;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+.skip-to-main:focus {
+  left: 1rem;
+  top: 1rem;
+  z-index: 200;
+  width: auto;
+  height: auto;
+  overflow: visible;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  background: rgb(5 150 105);
+  color: white;
+  outline: 2px solid white;
+}

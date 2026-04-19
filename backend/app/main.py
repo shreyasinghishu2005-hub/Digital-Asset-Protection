@@ -7,19 +7,41 @@ from typing import Literal, Optional
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response
+from pydantic import BaseModel, Field
+from starlette.concurrency import run_in_threadpool
 
-from . import analysis
+from . import analysis, config, gemini_assistant
 from .store import blockchain, piracy
 
 app = FastAPI(title="SportShield Pro API", version="1.0.0")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
+    allow_origins=config.cors_origins(),
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+def _enforce_size(raw: bytes) -> None:
+    max_b = config.max_upload_bytes()
+    if len(raw) > max_b:
+        raise HTTPException(
+            status_code=413,
+            detail=f"Upload exceeds maximum size ({max_b // (1024 * 1024)} MiB).",
+        )
+
+
+class AssistantInsightBody(BaseModel):
+    """Context for the Gemini-powered (or fallback) assistant."""
+
+    label: str = Field(min_length=1, max_length=16)
+    confidence: float = Field(ge=0, le=100)
+    trust_score: int = Field(ge=0, le=100)
+    filename: Optional[str] = Field(None, max_length=512)
+    user_question: Optional[str] = Field(None, max_length=2000)
+    piracy_duplicate: Optional[bool] = None
 
 
 def _demo_case(s: Optional[str]) -> Optional[Literal["real", "fake", "edited"]]:
@@ -35,12 +57,40 @@ def health():
     return {"status": "ok", "service": "SportShield Pro"}
 
 
+@app.get("/api/config/public")
+def public_config():
+    """Non-secret flags for the UI (e.g. whether Google Gemini is configured)."""
+    return {
+        "assistant": "gemini" if config.gemini_api_key() else "fallback",
+    }
+
+
+@app.post("/api/assistant/insight")
+async def assistant_insight(body: AssistantInsightBody):
+    """
+    Context-aware narrative using Google Gemini when GEMINI_API_KEY is set; otherwise template fallback.
+    Key never leaves the server.
+    """
+    text, source = await run_in_threadpool(
+        lambda: gemini_assistant.generate_insight(
+            label=body.label,
+            confidence=body.confidence,
+            trust_score=body.trust_score,
+            filename=body.filename,
+            user_question=body.user_question,
+            piracy_duplicate=body.piracy_duplicate,
+        )
+    )
+    return {"text": text, "source": source}
+
+
 @app.post("/api/analyze")
 async def analyze_media(
     file: UploadFile = File(...),
     demo_case: Optional[str] = Form(None),
 ):
     raw = await file.read()
+    _enforce_size(raw)
     if not raw:
         raise HTTPException(400, "Empty file")
     dc = _demo_case(demo_case)
@@ -53,8 +103,19 @@ async def analyze_media(
             img = analysis.first_frame_from_video(raw)
         else:
             img = analysis.load_image_from_bytes(raw)
-    except Exception:
-        img = analysis.load_image_from_bytes(raw)
+    except Exception as e:
+        if is_video:
+            raise HTTPException(
+                status_code=422,
+                detail=(
+                    "Could not read a video frame from this file. "
+                    "Use a supported container/codec (e.g. H.264 in MP4) or upload an image instead."
+                ),
+            ) from e
+        raise HTTPException(
+            status_code=400,
+            detail="Could not decode image data.",
+        ) from e
 
     label, conf = analysis.simulate_verdict(raw, dc)
     fake_bias = label == "FAKE"
@@ -76,6 +137,7 @@ async def analyze_media(
 @app.post("/api/generate-fake")
 async def generate_fake(file: UploadFile = File(...)):
     raw = await file.read()
+    _enforce_size(raw)
     if not raw:
         raise HTTPException(400, "Empty file")
     try:
@@ -90,6 +152,7 @@ async def generate_fake(file: UploadFile = File(...)):
 @app.post("/api/watermark")
 async def watermark(file: UploadFile = File(...)):
     raw = await file.read()
+    _enforce_size(raw)
     if not raw:
         raise HTTPException(400, "Empty file")
     try:
@@ -104,6 +167,7 @@ async def watermark(file: UploadFile = File(...)):
 @app.post("/api/blockchain/register")
 async def chain_register(file: UploadFile = File(...)):
     raw = await file.read()
+    _enforce_size(raw)
     h = analysis.file_hash(raw)
     entry = blockchain.register(h, file.filename or "media")
     return {
@@ -117,6 +181,7 @@ async def chain_register(file: UploadFile = File(...)):
 @app.post("/api/blockchain/verify")
 async def chain_verify(file: UploadFile = File(...), registered_hash: Optional[str] = Form(None)):
     raw = await file.read()
+    _enforce_size(raw)
     h = analysis.file_hash(raw)
     if registered_hash:
         if h == registered_hash:
@@ -152,6 +217,7 @@ async def chain_verify(file: UploadFile = File(...), registered_hash: Optional[s
 @app.post("/api/piracy-check")
 async def piracy_check(file: UploadFile = File(...)):
     raw = await file.read()
+    _enforce_size(raw)
     h = analysis.file_hash(raw)
     r = piracy.check(h, file.filename or "upload")
     return {"media_hash": h, **r}
@@ -169,6 +235,7 @@ async def build_report(
     demo_case: Optional[str] = Form(None),
 ):
     raw = await file.read()
+    _enforce_size(raw)
     dc = _demo_case(demo_case)
     label, conf = analysis.simulate_verdict(raw, dc)
     ts = analysis.trust_score(label, conf)

@@ -84,6 +84,29 @@ export async function piracyReset() {
   await fetch(`${base}/api/piracy/reset`, { method: "POST" });
 }
 
+export async function fetchPublicConfig(): Promise<{ assistant: "gemini" | "fallback" }> {
+  const r = await fetch(`${base}/api/config/public`);
+  if (!r.ok) throw new Error(await r.text());
+  return r.json();
+}
+
+export async function assistantInsight(body: {
+  label: string;
+  confidence: number;
+  trust_score: number;
+  filename?: string;
+  user_question?: string;
+  piracy_duplicate?: boolean;
+}): Promise<{ text: string; source: "gemini" | "fallback" }> {
+  const r = await fetch(`${base}/api/assistant/insight`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  if (!r.ok) throw new Error(await r.text());
+  return r.json();
+}
+
 export async function downloadReport(file: File, demoCase?: string) {
   const fd = new FormData();
   fd.append("file", file);

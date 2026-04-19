@@ -1,11 +1,12 @@
-.venv/
-**/.venv/
 .env
-.env.*
+.venv/
 __pycache__/
 *.pyc
 node_modules/
 dist/
+*.tsbuildinfo
 .DS_Store
 *.log
-*.tsbuildinfo
+.env
+.env.*
+!.env.example

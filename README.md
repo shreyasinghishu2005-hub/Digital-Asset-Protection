@@ -47,35 +47,49 @@ Open **http://127.0.0.1:5173** — API calls proxy to port **8000**.
 | Camera | Webcam capture → analyze |
 | Report | Downloadable `.txt` summary |
 | Toasts & motion | Framer Motion alerts |
+| **Smart assistant** | Context-aware narrative via **`POST /api/assistant/insight`**; **Google Gemini** when `GEMINI_API_KEY` is set (see `backend/.env.example`) |
+
+## Google Gemini (optional)
+
+1. Create an API key in [Google AI Studio](https://aistudio.google.com/apikey).
+2. Copy `backend/.env.example` to `backend/.env` and set `GEMINI_API_KEY=...`.
+3. Restart the API. The UI shows **Google Gemini** when `/api/config/public` reports `assistant: "gemini"`.
+
+Keys stay **server-side only**; the browser never sees them.
+
+## Tests
+
+```bash
+cd backend
+python -m pytest tests -v
+```
 
 ## Docs
 
 - [Demo script](docs/DEMO_SCRIPT.md) — what to say step-by-step  
 - [UI layout](docs/UI_LAYOUT.md) — panel map for judges  
+- [Challenge alignment](docs/CHALLENGE_ALIGNMENT.md) — rubric mapping (assistant, Google Services, security, testing, accessibility)
 
 ## Tech
 
 - **Frontend:** React 18, TypeScript, Vite, Tailwind CSS, Framer Motion, Lucide icons  
-- **Backend:** FastAPI, Pillow, NumPy, OpenCV (headless) for demo manipulations  
+- **Backend:** FastAPI, Pillow, NumPy, OpenCV (headless), optional **Google Generative AI (Gemini)**  
 
-## Publish to GitHub (digital asset protection)
+## Publish to GitHub (public)
 
-The repo is git-ready on `main`. To upload:
+1. Commit everything locally (ignores `node_modules/`, `.venv/`, `dist/` — see `.gitignore`):
 
-1. On GitHub, create a **new empty repository** (no README/license), e.g. **`digital-asset-protection`** or **`sportshield-pro`**.
-2. In the project folder, set your identity if needed, add the remote, and push:
+   ```powershell
+   cd sportshield-pro
+   .\scripts\publish-github.ps1
+   ```
 
-```powershell
-cd f:\open\sportshield-pro
-git config user.name "Your Name"
-git config user.email "your-email@example.com"
-git remote add origin https://github.com/YOUR_USERNAME/digital-asset-protection.git
-git push -u origin main
-```
+2. If you prefer manual steps: `git init`, `git add -A`, `git commit -m "..."`, then add a **public** empty repo on [github.com/new](https://github.com/new) and `git remote add origin https://github.com/<you>/<repo>.git` + `git push -u origin main`.
 
-Use SSH if you prefer: `git@github.com:YOUR_USERNAME/digital-asset-protection.git`.
+3. With [GitHub CLI](https://cli.github.com/) (`gh auth login` once):  
+   `gh repo create sportshield-pro --public --source=. --remote=origin --push`
 
-**Suggested topics** on the repo: `digital-asset-protection`, `deepfake-detection`, `media-forensics`, `fastapi`, `react`, `sports-media`.
+Demo PNGs under `frontend/public/samples/` are included so **Demo Mode** works after clone (regenerate anytime with `scripts/generate_demo_samples.py`).
 
 ## Disclaimer
 

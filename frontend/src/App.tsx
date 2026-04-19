@@ -14,6 +14,7 @@ import {
   Upload,
   Zap,
 } from "lucide-react";
+import { AssistantPanel } from "./components/AssistantPanel";
 import { TrustMeter } from "./components/TrustMeter";
 import { ToastAlerts, type ToastKind } from "./components/ToastAlerts";
 import * as api from "./lib/api";
@@ -44,17 +45,48 @@ export default function App() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  const toastHideRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [camActive, setCamActive] = useState(false);
+  const [lastPiracyDuplicate, setLastPiracyDuplicate] = useState(false);
+  const [assistantMode, setAssistantMode] = useState<"gemini" | "fallback" | null>(null);
 
   const heatmapSrc = useMemo(() => {
     if (!result?.heatmap_png_base64) return null;
     return `data:image/png;base64,${result.heatmap_png_base64}`;
   }, [result]);
 
-  const clearToastSoon = useCallback((k: ToastKind) => {
-    setToast(k);
-    setTimeout(() => setToast(null), 4200);
+  const hideToastAfter = useCallback((ms: number) => {
+    if (toastHideRef.current) {
+      clearTimeout(toastHideRef.current);
+      toastHideRef.current = null;
+    }
+    toastHideRef.current = setTimeout(() => {
+      setToast(null);
+      toastHideRef.current = null;
+    }, ms);
   }, []);
+
+  useEffect(
+    () => () => {
+      if (toastHideRef.current) clearTimeout(toastHideRef.current);
+    },
+    []
+  );
+
+  useEffect(() => {
+    api
+      .fetchPublicConfig()
+      .then((c) => setAssistantMode(c.assistant))
+      .catch(() => setAssistantMode("fallback"));
+  }, []);
+
+  const clearToastSoon = useCallback(
+    (k: ToastKind) => {
+      setToast(k);
+      hideToastAfter(4200);
+    },
+    [hideToastAfter]
+  );
 
   const runAnalyze = useCallback(
     async (f: File, dc?: "real" | "fake" | "edited") => {
@@ -65,16 +97,20 @@ export default function App() {
         setTrustScore(r.trust_score);
         setLabel(r.label);
         clearToastSoon(r.label === "FAKE" ? "fake" : "real");
+        let dup = false;
+        setLastPiracyDuplicate(false);
         try {
           const p = await api.piracyCheck(f);
+          dup = p.duplicate;
           if (p.duplicate) {
             setToast("piracy");
             setToastMsg(p.detail || p.message);
-            setTimeout(() => setToast(null), 5200);
+            hideToastAfter(5200);
           }
         } catch {
           /* optional */
         }
+        setLastPiracyDuplicate(dup);
       } catch (e) {
         console.error(e);
         alert("Analysis failed — is the API running on port 8000?");
@@ -82,7 +118,7 @@ export default function App() {
         setLoading(false);
       }
     },
-    [clearToastSoon]
+    [clearToastSoon, hideToastAfter]
   );
 
   useEffect(() => {
@@ -200,7 +236,7 @@ export default function App() {
     await runAnalyze(f);
     setToast("chain");
     setToastMsg("Watermark forensic pattern still traceable — mismatch flagged on tampered pixels (demo).");
-    setTimeout(() => setToast(null), 4500);
+    hideToastAfter(4500);
   };
 
   const registerChain = async () => {
@@ -214,7 +250,7 @@ export default function App() {
       ]);
       setToast("chain");
       setToastMsg("Media Registered Successfully — hash anchored (simulated ledger).");
-      setTimeout(() => setToast(null), 4000);
+      hideToastAfter(4000);
     } catch (e) {
       console.error(e);
     }
@@ -227,7 +263,7 @@ export default function App() {
         setChainLog((l) => [...l, `Verify: ${r.result}`]);
         setToast("chain");
         setToastMsg(r.result + (r.transaction_id ? ` — ${r.transaction_id.slice(0, 14)}…` : ""));
-        setTimeout(() => setToast(null), 4000);
+        hideToastAfter(4000);
       } else if (!sameFile && file) {
         const tiny = new Blob([file.name + "-edited"], { type: "text/plain" });
         const edited = blobToFile(tiny, "edited-placeholder.txt");
@@ -235,7 +271,7 @@ export default function App() {
         setChainLog((l) => [...l, `Verify edited: ${r.result}`]);
         setToast("chain");
         setToastMsg(r.result === "Mismatch Detected" ? "Mismatch Detected — hash differs from registry." : r.result);
-        setTimeout(() => setToast(null), 4500);
+        hideToastAfter(4500);
       }
     } catch (e) {
       console.error(e);
@@ -288,6 +324,9 @@ export default function App() {
 
   return (
     <div className="min-h-screen pb-24">
+      <a href="#main-content" className="skip-to-main">
+        Skip to main content
+      </a>
       <ToastAlerts kind={toast} message={toastMsg} />
 
       <header className="border-b border-white/10 bg-black/20 backdrop-blur-md sticky top-0 z-50">
@@ -308,7 +347,7 @@ export default function App() {
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-4 pt-10 grid lg:grid-cols-12 gap-8">
+      <main id="main-content" className="max-w-7xl mx-auto px-4 pt-10 grid lg:grid-cols-12 gap-8">
         {/* Left column: upload + results */}
         <section className="lg:col-span-7 space-y-6">
           <motion.div
@@ -351,7 +390,13 @@ export default function App() {
               onDrop={onDrop}
               className="border-2 border-dashed border-white/20 rounded-xl p-10 text-center hover:border-emerald-500/50 transition-colors cursor-pointer relative overflow-hidden group"
             >
-              <input type="file" accept="image/*,video/*" className="absolute inset-0 opacity-0 cursor-pointer" onChange={onFileInput} />
+              <input
+                type="file"
+                accept="image/*,video/*"
+                aria-label="Upload sports image or video for integrity analysis"
+                className="absolute inset-0 opacity-0 cursor-pointer"
+                onChange={onFileInput}
+              />
               <Sparkles className="w-10 h-10 mx-auto text-emerald-400/80 mb-3 group-hover:scale-110 transition-transform" />
               <p className="font-semibold text-slate-200">Drag & drop sports image or clip</p>
               <p className="text-sm text-slate-500 mt-1">Instant analysis in seconds · heatmap proof</p>
@@ -416,6 +461,12 @@ export default function App() {
               </div>
             </motion.div>
           )}
+
+          <AssistantPanel
+            result={result}
+            piracyDuplicate={lastPiracyDuplicate}
+            assistantMode={assistantMode}
+          />
 
           {/* Before / After */}
           <div className="glass p-6">
