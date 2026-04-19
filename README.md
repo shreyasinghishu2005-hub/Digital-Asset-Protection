@@ -33,6 +33,19 @@ npm run dev
 
 Open **http://127.0.0.1:5173** — API calls proxy to port **8000**.
 
+### Deploy API on [Render](https://render.com)
+
+The repo includes a **root** [`requirements.txt`](requirements.txt) that pulls in [`backend/requirements.txt`](backend/requirements.txt), so `pip install -r requirements.txt` works from the repository root (Render’s default).
+
+- **`.python-version`** pins **Python 3.12** (avoids bleeding-edge defaults like 3.14 for binary wheels). See [Render: Python version](https://render.com/docs/python-version).
+- **Start command** (Web Service):
+
+  ```bash
+  cd backend && uvicorn app.main:app --host 0.0.0.0 --port $PORT
+  ```
+
+- **Environment variables** (optional): `GEMINI_API_KEY`, `CORS_ORIGINS` (comma-separated origins allowed to call the API, e.g. your Vite or static site URL).
+
 ## Features (checklist)
 
 | Feature | Notes |

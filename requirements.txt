@@ -1,0 +1,2 @@
+# Root file for platforms (e.g. Render) that run `pip install -r requirements.txt` from repo root.
+-r backend/requirements.txt
