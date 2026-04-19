@@ -58,6 +58,25 @@ Open **http://127.0.0.1:5173** — API calls proxy to port **8000**.
 - **Frontend:** React 18, TypeScript, Vite, Tailwind CSS, Framer Motion, Lucide icons  
 - **Backend:** FastAPI, Pillow, NumPy, OpenCV (headless) for demo manipulations  
 
+## Publish to GitHub (digital asset protection)
+
+The repo is git-ready on `main`. To upload:
+
+1. On GitHub, create a **new empty repository** (no README/license), e.g. **`digital-asset-protection`** or **`sportshield-pro`**.
+2. In the project folder, set your identity if needed, add the remote, and push:
+
+```powershell
+cd f:\open\sportshield-pro
+git config user.name "Your Name"
+git config user.email "your-email@example.com"
+git remote add origin https://github.com/YOUR_USERNAME/digital-asset-protection.git
+git push -u origin main
+```
+
+Use SSH if you prefer: `git@github.com:YOUR_USERNAME/digital-asset-protection.git`.
+
+**Suggested topics** on the repo: `digital-asset-protection`, `deepfake-detection`, `media-forensics`, `fastapi`, `react`, `sports-media`.
+
 ## Disclaimer
 
 This is a **demonstration**. Detection results are **not** production-grade forensic evidence. Replace `simulate_verdict` and related logic in `backend/app/analysis.py` with your trained models and validation pipelines before operational use.
