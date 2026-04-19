@@ -38,13 +38,19 @@ Open **http://127.0.0.1:5173** — API calls proxy to port **8000**.
 The repo includes a **root** [`requirements.txt`](requirements.txt) that pulls in [`backend/requirements.txt`](backend/requirements.txt), so `pip install -r requirements.txt` works from the repository root (Render’s default).
 
 - **`.python-version`** pins **Python 3.12** (avoids bleeding-edge defaults like 3.14 for binary wheels). See [Render: Python version](https://render.com/docs/python-version).
-- **Start command** (Web Service):
+- **[`render.yaml`](render.yaml)** defines the **Start Command** for FastAPI. Render’s Python default is `gunicorn your_application.wsgi`, which **will fail** for this project — do not use that.
 
-  ```bash
-  cd backend && uvicorn app.main:app --host 0.0.0.0 --port $PORT
-  ```
+**Start command** (must be exactly this for a manual Web Service):
 
-- **Environment variables** (optional): `GEMINI_API_KEY`, `CORS_ORIGINS` (comma-separated origins allowed to call the API, e.g. your Vite or static site URL).
+```bash
+cd backend && uvicorn app.main:app --host 0.0.0.0 --port $PORT
+```
+
+If you already created the service: **Dashboard → your Web Service → Settings → Start Command** → paste the line above → Save and redeploy.
+
+**Health check path:** `/api/health` (optional in Settings).
+
+**Environment variables** (optional): `GEMINI_API_KEY`, `CORS_ORIGINS` (comma-separated origins allowed to call the API, e.g. your static site URL).
 
 ## Features (checklist)
 

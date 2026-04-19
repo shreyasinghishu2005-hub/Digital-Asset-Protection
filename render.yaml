@@ -1,0 +1,13 @@
+# Render Blueprint — https://render.com/docs/blueprint-spec
+# Prevents the default Python start command: gunicorn your_application.wsgi (Django/WGI placeholder).
+# After push, link this repo as a Blueprint or set the same Start Command in the dashboard.
+
+services:
+  - type: web
+    name: digital-asset-protection-api
+    runtime: python
+    plan: free
+    region: oregon
+    buildCommand: pip install -r requirements.txt
+    startCommand: cd backend && uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /api/health
