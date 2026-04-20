@@ -45,17 +45,6 @@ async def unhandled_exception_handler(request: Request, exc: Exception):
     )
 
 
-@app.get("/")
-def root():
-    """Browser-friendly root so visiting the API host does not look like a broken site."""
-    return {
-        "service": "SportShield Pro API",
-        "ok": True,
-        "docs": "/docs",
-        "health": "/api/health",
-    }
-
-
 @app.get("/health")
 def health_alias():
     return {"status": "ok"}
