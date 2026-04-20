@@ -4,12 +4,14 @@ import base64
 import io
 import logging
 import traceback
+from pathlib import Path
 from typing import Literal, Optional
 
 from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
 from fastapi.exception_handlers import http_exception_handler
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse, Response
+from fastapi.responses import FileResponse, JSONResponse, Response
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 from starlette.concurrency import run_in_threadpool
 
@@ -22,6 +24,9 @@ if not logging.getLogger().handlers:
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
 
 app = FastAPI(title="SportShield Pro API", version="1.0.0")
+
+# Path to the built frontend (frontend/dist)
+_FRONTEND_DIST = Path(__file__).resolve().parent.parent.parent / "frontend" / "dist"
 
 
 @app.exception_handler(Exception)
@@ -299,3 +304,18 @@ async def build_report(
         media_type="text/plain",
         headers={"Content-Disposition": f'attachment; filename="sportshield-report.txt"'},
     )
+
+
+# ---------------------------------------------------------------------------
+# Serve built React frontend (frontend/dist) — must be LAST
+# ---------------------------------------------------------------------------
+if _FRONTEND_DIST.is_dir():
+    app.mount("/assets", StaticFiles(directory=str(_FRONTEND_DIST / "assets")), name="assets")
+
+    @app.get("/{full_path:path}", include_in_schema=False)
+    async def serve_spa(full_path: str):
+        """Catch-all: serve index.html for any non-API route (SPA routing)."""
+        index = _FRONTEND_DIST / "index.html"
+        if index.exists():
+            return FileResponse(str(index))
+        return JSONResponse({"detail": "Frontend not built"}, status_code=404)

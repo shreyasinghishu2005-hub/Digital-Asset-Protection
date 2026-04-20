@@ -1,11 +1,11 @@
 # Render Blueprint — https://render.com/docs/blueprint-spec
 services:
   - type: web
-    name: digital-asset-protection-api
+    name: digital-asset-protection
     runtime: python
     plan: free
     region: oregon
-    buildCommand: pip install -r requirements.txt
+    buildCommand: bash build.sh
     startCommand: bash start.sh
     healthCheckPath: /api/health
     envVars:
