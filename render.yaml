@@ -1,7 +1,4 @@
 # Render Blueprint — https://render.com/docs/blueprint-spec
-# Prevents the default Python start command: gunicorn your_application.wsgi (Django/WGI placeholder).
-# After push, link this repo as a Blueprint or set the same Start Command in the dashboard.
-
 services:
   - type: web
     name: digital-asset-protection-api
@@ -9,6 +6,10 @@ services:
     plan: free
     region: oregon
     buildCommand: pip install -r requirements.txt
-    # Use bash start.sh so ASGI + gunicorn+UvicornWorker match; plain uvicorn also works if set in dashboard.
     startCommand: bash start.sh
     healthCheckPath: /api/health
+    envVars:
+      - key: PORT
+        value: 10000
+      - key: CORS_ORIGINS
+        value: "*"

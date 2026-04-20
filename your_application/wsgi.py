@@ -1,7 +1,8 @@
 """
-Entrypoint for gunicorn with UvicornWorker (ASGI).
+ASGI entrypoint for Render / gunicorn + UvicornWorker.
 
-  gunicorn your_application.wsgi:application -k uvicorn.workers.UvicornWorker
+Start command:
+    gunicorn your_application.wsgi:application -k uvicorn.workers.UvicornWorker
 """
 
 from __future__ import annotations
@@ -9,6 +10,7 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
+# Make sure backend/app is importable
 _root = Path(__file__).resolve().parent.parent
 _backend = _root / "backend"
 if str(_backend) not in sys.path:

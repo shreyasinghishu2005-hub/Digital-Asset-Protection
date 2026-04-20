@@ -4,14 +4,14 @@ from __future__ import annotations
 
 import os
 
-# Comma-separated list, e.g. "http://localhost:5173,https://myapp.vercel.app"
+
 def cors_origins() -> list[str]:
-    raw = os.getenv(
-        "CORS_ORIGINS",
-        "http://127.0.0.1:5173,http://localhost:5173",
-    )
+    """
+    Comma-separated origins, e.g. "http://localhost:5173,https://myapp.vercel.app"
+    Defaults to * so Render deployments work out of the box.
+    """
+    raw = os.getenv("CORS_ORIGINS", "*")
     out = [o.strip() for o in raw.split(",") if o.strip()]
-    # Empty list can break CORS middleware / clients when env is set to "" on hosts like Render.
     if not out:
         return ["*"]
     return out

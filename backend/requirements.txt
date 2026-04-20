@@ -1,7 +1,6 @@
 fastapi==0.115.6
 uvicorn[standard]==0.32.1
 gunicorn>=22.0.0
-a2wsgi>=1.10.0
 python-multipart==0.0.17
 pillow==10.4.0
 numpy==2.1.3

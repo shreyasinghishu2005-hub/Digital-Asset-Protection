@@ -1,13 +1,11 @@
-"""Gunicorn config (optional)."""
+"""Gunicorn config for Render (ASGI via UvicornWorker)."""
 
 import os
 
-bind = f"0.0.0.0:{os.getenv('PORT', '8000')}"
+# Render sets PORT=10000 by default
+bind = f"0.0.0.0:{os.getenv('PORT', '10000')}"
 workers = 1
+worker_class = "uvicorn.workers.UvicornWorker"
 timeout = 120
 accesslog = "-"
 errorlog = "-"
-
-# If the platform supports it (or if you run `gunicorn -c gunicorn.conf.py ...`), use ASGI worker.
-worker_class = "uvicorn.workers.UvicornWorker"
-
